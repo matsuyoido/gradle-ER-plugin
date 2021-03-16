@@ -51,6 +51,9 @@ java {
 test {
     useJUnitPlatform()
 }
+tasks.named("testClasses") {
+    dependsOn("pluginUnderTestMetadata")
+}
 
 
 repositories {
@@ -59,8 +62,10 @@ repositories {
 dependencies {
   implementation gradleApi()
 
-  testImplementation "org.junit.jupiter:junit-jupiter-api:${junitTestVersion}"
-  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitTestVersion}"
+  testImplementation platform("org.junit:junit-bom:${junitTestVersion}")
+  testImplementation 'org.junit.jupiter:junit-jupiter'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 }
 
 

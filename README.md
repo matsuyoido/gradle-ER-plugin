@@ -2,10 +2,7 @@
 
 ## 実装手順(予定)
 
-1. gradle 経由で、 yaml ファイルを読み込む(テスト込み)
-    - ※Extension を複数定義できる前提で組む
 1. テーブル構造を定義するための、yaml の形式を決める
-1. Extension の形式を考える
 1. yaml の内容を使って、DDL 用のクラスを作成する
 1. クラスから、 DDL を出力する
 1. ==ここまでを1タスクとする==
@@ -24,4 +21,35 @@ TODO
 
 ## Extension形式
 
-TODO
+```
+yamlER {
+    // If you want to set encoding. 'windows' or 'linux' or 'mac'
+    lineEnding = ''
+    ddl {
+        // specify yaml file
+        yaml = file('.yaml')
+        // specify ddl output directory
+        outDir = file('')
+        // If you want to change ddl file name. default: yaml file name.
+        fileName = ''
+        // If you want to add schema name for all table name prefix .
+        schema = ''
+        // If set true, all table adding CREATE TABLE IF EXISTS.
+        existCheck = false
+        // If set true, DROP & TRUNCATE table before INSERT.
+        truncate = false
+        // If set true, all reserved word lower character.
+        lowerAll  false
+    }
+    ddl {
+        ...
+    }
+    er {
+        ddl = file('.sql')
+        outDir = file('')
+    }
+    er {
+        ...
+    }
+}
+```
