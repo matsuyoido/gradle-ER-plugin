@@ -2,10 +2,6 @@
 
 ## 実装手順(予定)
 
-1. テーブル構造を定義するための、yaml の形式を決める
-1. yaml の内容を使って、DDL 用のクラスを作成する
-1. クラスから、 DDL を出力する
-1. ==ここまでを1タスクとする==
 1. schemaspy の jar がどのぐらい使えるかを試す
     - 参考
         - https://qiita.com/rh_taro/items/be9c2d4e53f8130bb140
@@ -17,7 +13,50 @@
 
 ## yaml形式
 
-TODO
+```yaml
+version: 1.0.0
+
+domains:
+    # コメント
+    ドメイン名: 型
+
+commonColumns:
+    <<カラム名>>: 
+        logicalName: <<論理名>>
+        info: <<カラム説明>>
+        type: <<domainsの定義名 or VARCHAR とかの定義>>
+        options: <<constraints>
+        defaultValue: <<デフォルト値>>
+
+
+tables:
+    テーブル名:
+        logicalName: <<論理名>>
+        info: <<テーブル説明>>
+        columns:
+            # カラム名に対する補足
+            <<カラム名>>:
+                logicalName: <<論理名>>
+                info: <<カラム説明>>
+                type: <<domainsの定義名 or VARCHAR とかの定義>>
+                options: <<constraints>
+                defaultValue: <<デフォルト値>>
+        pk:
+            - <<カラム名>>
+        fk:
+            <<リレーション名>>:
+                relate:
+                    - <<親テーブルのカラム名>>
+                to: 
+                    <<子テーブル名>>:
+                        - <<子テーブルのカラム名>>
+        uq:
+            <<ユニークキー名>>:
+                - <<カラム名>>
+        idx:
+            <<インデックス名>>:
+                - <<カラム名>>
+```
 
 ## Extension形式
 

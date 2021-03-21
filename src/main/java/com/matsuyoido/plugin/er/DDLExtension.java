@@ -31,6 +31,10 @@ public class DDLExtension implements Serializable {
         return Optional.ofNullable(this.fileName).filter(Predicate.not(String::isBlank));
     }
 
+    public Optional<String> getSchema() {
+        return Optional.ofNullable(this.schema).filter(Predicate.not(String::isBlank));
+    }
+
     public boolean isIncludeExistCheck() {
         return this.existCheck;
     }
