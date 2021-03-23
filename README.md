@@ -66,7 +66,7 @@ yamlER {
     lineEnding = ''
     ddl {
         // specify yaml file
-        yaml = file('.yaml')
+        yaml = file('.yml')
         // specify ddl output directory
         outDir = file('')
         // If you want to change ddl file name. default: yaml file name.

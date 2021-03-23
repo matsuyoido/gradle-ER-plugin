@@ -28,7 +28,7 @@ public class MainPluginTest {
 
     @Test
     public void taskCheck() throws Exception {
-        String yamlFileName = classpathResourcePath("testcase/10_simple.yaml");
+        String yamlFileName = classpathResourcePath("testcase/10_simple.yml");
         setup(
             "yamlER {",
             "    lineEnding = 'linux'",
@@ -57,10 +57,10 @@ public class MainPluginTest {
 
     @ParameterizedTest
     @CsvSource({
-        ",testcase/00_all.yaml,ddl-1.0.0.sql,testcase/01_result.sql",
-        ",testcase/10_simple.yaml,ddl.sql,testcase/11_result.sql",
-        ",testcase/20_containsDomain.yaml,ddl.sql,testcase/21_result.sql",
-        ",testcase/30_containsKeys.yaml,ddl.sql,testcase/31_result.sql"
+        ",testcase/00_all.yml,ddl-1.0.0.sql,testcase/01_result.sql",
+        ",testcase/10_simple.yml,ddl.sql,testcase/11_result.sql",
+        ",testcase/20_containsDomain.yml,ddl.sql,testcase/21_result.sql",
+        ",testcase/30_containsKeys.yml,ddl.sql,testcase/31_result.sql"
     })
     public void ddlTaskExecute_noSchema(String testCase, String yamlFilePath, String expectFileName, String expectResultFilePath) throws Exception {
         String yamlFileName = classpathResourcePath(yamlFilePath);
@@ -87,10 +87,10 @@ public class MainPluginTest {
 
     @ParameterizedTest
     @CsvSource({
-        ",testcase/00_all.yaml,ddl-1.0.0.sql,testcase/02_result.sql",
-        ",testcase/10_simple.yaml,ddl.sql,testcase/12_result.sql",
-        ",testcase/20_containsDomain.yaml,ddl.sql,testcase/22_result.sql",
-        ",testcase/30_containsKeys.yaml,ddl.sql,testcase/32_result.sql"
+        ",testcase/00_all.yml,ddl-1.0.0.sql,testcase/02_result.sql",
+        ",testcase/10_simple.yml,ddl.sql,testcase/12_result.sql",
+        ",testcase/20_containsDomain.yml,ddl.sql,testcase/22_result.sql",
+        ",testcase/30_containsKeys.yml,ddl.sql,testcase/32_result.sql"
     })
     public void ddlTaskExecute_existSchema(String testCase, String yamlFilePath, String expectFileName, String expectResultFilePath) throws Exception {
         String yamlFileName = classpathResourcePath(yamlFilePath);
@@ -117,10 +117,10 @@ public class MainPluginTest {
 
     @ParameterizedTest
     @CsvSource({
-        ",testcase/00_all.yaml,ddl-1.0.0.sql,testcase/03_result.sql",
-        ",testcase/10_simple.yaml,ddl.sql,testcase/13_result.sql",
-        ",testcase/20_containsDomain.yaml,ddl.sql,testcase/23_result.sql",
-        ",testcase/30_containsKeys.yaml,ddl.sql,testcase/33_result.sql"
+        ",testcase/00_all.yml,ddl-1.0.0.sql,testcase/03_result.sql",
+        ",testcase/10_simple.yml,ddl.sql,testcase/13_result.sql",
+        ",testcase/20_containsDomain.yml,ddl.sql,testcase/23_result.sql",
+        ",testcase/30_containsKeys.yml,ddl.sql,testcase/33_result.sql"
     })
     public void ddlTaskExecute_existCheck(String testCase, String yamlFilePath, String expectFileName, String expectResultFilePath) throws Exception {
         String yamlFileName = classpathResourcePath(yamlFilePath);
@@ -147,10 +147,10 @@ public class MainPluginTest {
 
     @ParameterizedTest
     @CsvSource({
-        ",testcase/00_all.yaml,ddl-1.0.0.sql,testcase/04_result.sql",
-        ",testcase/10_simple.yaml,ddl.sql,testcase/14_result.sql",
-        ",testcase/20_containsDomain.yaml,ddl.sql,testcase/24_result.sql",
-        ",testcase/30_containsKeys.yaml,ddl.sql,testcase/34_result.sql"
+        ",testcase/00_all.yml,ddl-1.0.0.sql,testcase/04_result.sql",
+        ",testcase/10_simple.yml,ddl.sql,testcase/14_result.sql",
+        ",testcase/20_containsDomain.yml,ddl.sql,testcase/24_result.sql",
+        ",testcase/30_containsKeys.yml,ddl.sql,testcase/34_result.sql"
     })
     public void ddlTaskExecute_lowerAll(String testCase, String yamlFilePath, String expectFileName, String expectResultFilePath) throws Exception {
         String yamlFileName = classpathResourcePath(yamlFilePath);
@@ -182,7 +182,7 @@ public class MainPluginTest {
         ",testcase/42_result.sql,false,schema_test",
     })
     public void ddlTaskExecute_truncate(String testCase, String expectResultFilePath, boolean lowerAll, String schemaName) throws Exception {
-        String yamlFileName = classpathResourcePath("testcase/40_truncateTest.yaml");
+        String yamlFileName = classpathResourcePath("testcase/40_truncateTest.yml");
         setup(
             "yamlER {",
             "    lineEnding = 'linux'",
