@@ -3,7 +3,7 @@ tables:
   user: 
     columns: 
       id: 
-        type: SERIAL
+        type: INT
         options: NOT NULL
       public_id:
         type: VARCHAR(8)
@@ -33,7 +33,7 @@ tables:
   shop: 
     columns: 
       id: 
-        type: SERIAL
+        type: INT
         options: NOT NULL
       user_id: 
         type: INT
@@ -47,7 +47,7 @@ tables:
   customer: 
     columns: 
       id: 
-        type: SERIAL
+        type: INT
         options: NOT NULL
       user_id: 
         type: INT

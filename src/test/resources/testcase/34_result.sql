@@ -1,6 +1,6 @@
 -- user
 create table user(
-  id SERIAL NOT NULL,
+  id INT NOT NULL,
   public_id VARCHAR(8) NOT NULL,
   name VARCHAR(50) NOT NULL,
   blood_type CHAR(1) NOT NULL,
@@ -10,13 +10,13 @@ create table user(
 );
 -- shop
 create table shop(
-  id SERIAL NOT NULL,
+  id INT NOT NULL,
   user_id INT NOT NULL,
   primary key (id)
 );
 -- customer
 create table customer(
-  id SERIAL NOT NULL,
+  id INT NOT NULL,
   user_id INT NOT NULL,
   primary key (id)
 );

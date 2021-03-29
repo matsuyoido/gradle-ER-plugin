@@ -1,6 +1,7 @@
 package com.matsuyoido.plugin.er;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
+import org.gradle.testkit.runner.UnexpectedBuildFailure;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -204,6 +206,65 @@ public class MainPluginTest {
             Files.readAllLines(Path.of(classpathResourcePath(expectResultFilePath))).stream().filter(Predicate.not(String::isBlank)).toArray(),
             Files.readAllLines(resultFile.toPath()).stream().filter(Predicate.not(String::isBlank)).toArray(),
             testCase + " DDL content equals.");
+    }
+
+    @Test
+    public void erTaskExecute_minimum() throws Exception {
+        String ddlFileName = classpathResourcePath("testcase/31_result.sql");
+
+        setup(
+            "yamlER {",
+            "    lineEnding = 'linux'",
+            "    er {",
+            "      ddl = file('" + ddlFileName + "')",
+            "      outDir = file('./er')",
+            "    }",
+            "}"
+        );
+
+        run("5.0", "er").getOutput();
+
+        File resultFile = projectDir.resolve("er/index.html").toFile();
+        assertTrue(resultFile.exists(), "ER html file exist?");
+    }
+
+    @Test
+    public void erTaskExecute_schemaspyVersion() throws Exception {
+        String ddlFileName = classpathResourcePath("testcase/31_result.sql");
+
+        setup(
+            "yamlER {",
+            "    lineEnding = 'linux'",
+            "    er {",
+            "      version = '6.0.0'",
+            "      ddl = file('" + ddlFileName + "')",
+            "      outDir = file('./er')",
+            "    }",
+            "}"
+        );
+
+        run("5.0", "er").getOutput();
+
+        File resultFile = projectDir.resolve("er/index.html").toFile();
+        assertTrue(resultFile.exists(), "ER html file exist?");
+    }
+
+    @Test
+    public void erTaskExecute_schemaspyVersion_notFound() throws Exception {
+        String ddlFileName = classpathResourcePath("testcase/31_result.sql");
+
+        setup(
+            "yamlER {",
+            "    lineEnding = 'linux'",
+            "    er {",
+            "      version = '5.0.0'",
+            "      ddl = file('" + ddlFileName + "')",
+            "      outDir = file('./er')",
+            "    }",
+            "}"
+        );
+
+        assertThrows(UnexpectedBuildFailure.class, () -> run("5.0", "er"));
     }
 
     private void setup(String... extensionText) throws IOException {

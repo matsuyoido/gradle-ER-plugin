@@ -1,6 +1,6 @@
 -- user
 CREATE TABLE IF NOT EXISTS user(
-  id SERIAL NOT NULL,
+  id INT NOT NULL,
   public_id VARCHAR(8) NOT NULL,
   name VARCHAR(50) NOT NULL,
   blood_type CHAR(1) NOT NULL,
@@ -10,13 +10,13 @@ CREATE TABLE IF NOT EXISTS user(
 );
 -- shop
 CREATE TABLE IF NOT EXISTS shop(
-  id SERIAL NOT NULL,
+  id INT NOT NULL,
   user_id INT NOT NULL,
   PRIMARY KEY (id)
 );
 -- customer
 CREATE TABLE IF NOT EXISTS customer(
-  id SERIAL NOT NULL,
+  id INT NOT NULL,
   user_id INT NOT NULL,
   PRIMARY KEY (id)
 );

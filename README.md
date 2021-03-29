@@ -1,14 +1,6 @@
 # gradle-ER-plugin
 
-## 実装手順(予定)
 
-1. schemaspy の jar がどのぐらい使えるかを試す
-    - 参考
-        - https://qiita.com/rh_taro/items/be9c2d4e53f8130bb140
-        - https://mvnrepository.com/artifact/net.sourceforge.schemaspy/schemaspy
-        - https://github.com/schemaspy/schemaspy
-1. 使えそうなら、DDL を h2 データベースに流す()
-1. h2データベースから、schemaspy でER図を生成する
 
 
 ## yaml形式
@@ -84,6 +76,8 @@ yamlER {
         ...
     }
     er {
+        version = ''
+        schema = ''
         ddl = file('.sql')
         outDir = file('')
     }

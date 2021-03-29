@@ -1,5 +1,6 @@
 package com.matsuyoido.plugin.er;
 
+import com.matsuyoido.plugin.er.task.ERTask;
 import com.matsuyoido.plugin.er.task.YamlDDLTask;
 
 import org.gradle.api.Plugin;
@@ -21,6 +22,13 @@ public class MainPlugin implements Plugin<Project> {
 
         if (!extension.getDDLConfig().isEmpty()) {
             YamlDDLTask task = taskContainer.create("ddl", YamlDDLTask.class);
+            // always run
+            task.getOutputs().upToDateWhen(t -> false);
+            // group
+            task.setGroup("database");
+        }
+        if (!extension.getERConfig().isEmpty()) {
+            ERTask task = taskContainer.create("er", ERTask.class);
             // always run
             task.getOutputs().upToDateWhen(t -> false);
             // group

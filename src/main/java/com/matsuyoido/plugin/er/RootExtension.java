@@ -21,11 +21,18 @@ public class RootExtension implements Serializable {
     private final Project project;
     private LineEnd lineEnd = LineEnd.PLATFORM;
     private List<DDLExtension> ddl = new ArrayList<>();
+    private List<ERExtension> er = new ArrayList<>();
 
     public void ddl(Closure<DDLExtension> closure) {
         DDLExtension extension = new DDLExtension();
         this.project.configure(extension, closure);
         this.ddl.add(extension);
+    }
+
+    public void er(Closure<ERExtension> closure) {
+        ERExtension extension = new ERExtension();
+        this.project.configure(extension, closure);
+        this.er.add(extension);
     }
 
     public void setLineEnding(String value) {
@@ -50,6 +57,10 @@ public class RootExtension implements Serializable {
 
     public List<DDLExtension> getDDLConfig() {
         return Collections.unmodifiableList(this.ddl);
+    }
+
+    public List<ERExtension> getERConfig() {
+        return Collections.unmodifiableList(this.er);
     }
 
     public LineEnd getLineEnd() {
