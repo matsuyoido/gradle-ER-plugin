@@ -46,6 +46,11 @@ public class ERTask extends JavaExec {
     }
 
     @Override
+    public String getMain() {
+        return "-jar";
+    }
+
+    @Override
     public void exec() {
         setWorkingDir(schemaspyExecuteDir.toFile());
 
@@ -71,7 +76,6 @@ public class ERTask extends JavaExec {
         String schemaspyJarPath = getSchemaspyJarPath(getVersion(extension.getSchemaspyVersion()));
         List<String> applicationArgs = new ArrayList<>();
         Runnable jarRun = () -> {
-            setMain("-jar");
             setArgs(applicationArgs);
             super.exec();
         };
@@ -173,6 +177,7 @@ public class ERTask extends JavaExec {
         } finally {
             if (server != null) {
                 server.stop();
+                schemaspyExecuteDir.resolve(schemaName + ".mv.db").toFile().delete();
             }
         }
     }
