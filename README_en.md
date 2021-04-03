@@ -74,7 +74,7 @@ yamlER {
         yaml = file('.yml')
         // specify ddl output directory
         outDir = file('')
-        // If you want to change ddl file name. default: yaml file name.
+        // If you want to change ddl file name. default: ddl.sql
         fileName = ''
         // If you want to add schema name for all table name prefix .
         schema = ''

@@ -68,7 +68,7 @@ yamlER {
         yaml = file('.yml')
         // DDLファイルを出力したいフォルダ
         outDir = file('')
-        // 設定がなければyamlファイルと同名。違う名前にしたい場合は設定する。
+        // 設定がなければddl.sql。違う名前にしたい場合は設定する。
         fileName = ''
         // もしも全てのINSERT文などにスキーマ名をつけたい場合は設定する。
         schema = ''
@@ -129,7 +129,7 @@ yamlER {
     // er タスク用
     er {
         schema = 'test_db'
-        ddl = file("$rootDir/database/ddl/test.sql")
+        ddl = file("$rootDir/database/ddl/ddl.sql")
         outDir = file("$rootDir/database/er")
     }
 }
