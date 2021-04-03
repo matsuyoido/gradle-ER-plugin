@@ -2,7 +2,7 @@
 buildscript {
   ext {
     jdkVersion = '11'
-    pluginVersion = '1.0.0'
+    pluginVersion = '1.0.1'
     jarName = 'matsuyoido-er-gradle-plugin'
     gradleVersion = '6.7'
     junitTestVersion = '5.4.2'
@@ -66,6 +66,8 @@ dependencies {
   testImplementation 'org.junit.jupiter:junit-jupiter'
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+  // https://mvnrepository.com/artifact/org.yaml/snakeyaml
+  implementation group: 'org.yaml', name: 'snakeyaml', version: '1.28'
   // あえてjarの中に組み込む
   implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
 }
