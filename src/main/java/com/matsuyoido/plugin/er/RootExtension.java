@@ -30,7 +30,7 @@ public class RootExtension implements Serializable {
     }
 
     public void er(Closure<ERExtension> closure) {
-        ERExtension extension = new ERExtension();
+        ERExtension extension = new ERExtension(this.project);
         this.project.configure(extension, closure);
         this.er.add(extension);
     }

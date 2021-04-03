@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.matsuyoido.plugin.er.ERDbExtension;
 import com.matsuyoido.plugin.er.ERExtension;
 import com.matsuyoido.plugin.er.RootExtension;
 
@@ -55,10 +56,16 @@ public class ERTask extends JavaExec {
 
     private void executeSchemaspy(ERExtension extension) {
         String schemaName = extension.getSchema().orElse("dbtest");
-        Path ddlFilePath = extension.getDDLFile().toPath();
-        if (!ddlFilePath.toFile().exists()) {
-            log.error(String.format(logFormat, "ddl file not found: " + ddlFilePath));
+        boolean isH2Mode = extension.getDDLFile() != null;
+        if (isH2Mode && !extension.getDDLFile().exists()) {
+            log.error(String.format(logFormat, "ddl file not found: " + extension.getDDLFile().toPath()));
             throw new GradleException("ddl file not found.");
+        }
+        ERDbExtension databaseConnectExtension = extension.getDbSetting();
+        if (!isH2Mode && (databaseConnectExtension == null || databaseConnectExtension.isNotEnoughSetting())) {
+            log.error(String.format(logFormat, "extension setting is wrong."));
+            log.warn(getExtensionRequiredSetting());
+            throw new GradleException("db setting not found.");
         }
 
         String schemaspyJarPath = getSchemaspyJarPath(getVersion(extension.getSchemaspyVersion()));
@@ -85,7 +92,11 @@ public class ERTask extends JavaExec {
         }
         setupTemplateFile(applicationArgs, schemaName);
 
-        executeForH2ByMemory(schemaName, ddlFilePath, applicationArgs, jarRun);
+        if (isH2Mode) {
+            executeForH2ByMemory(schemaName, extension.getDDLFile().toPath(), applicationArgs, jarRun);
+        } else {
+            executeForConnectDatabase(schemaName, databaseConnectExtension, applicationArgs, jarRun);
+        }
     }
 
     private void setupTemplateFile(List<String> applicationArgs, String schemaName) {
@@ -117,6 +128,139 @@ public class ERTask extends JavaExec {
         }
 
         changeTemplateFile(templateFolderPath, schemaName);
+    }
+
+    private void executeForH2ByMemory(String schemaName, Path ddlFilePath, List<String> applicationArgs, Runnable jarExecutor) {
+        org.h2.tools.Server server = null;
+        try {
+            org.h2.tools.Server tcpServer = org.h2.tools.Server.createTcpServer("-ifNotExists", "-tcpAllowOthers", "-baseDir", schemaspyExecuteDir.toString()).start();
+            server = tcpServer;
+            String h2url = server.getService().getURL() + "/" + schemaName;
+            applicationArgs.add("-t");
+            applicationArgs.add("h2");
+            applicationArgs.add("-s");
+            applicationArgs.add(schemaName);
+
+            // set connect user
+            applicationArgs.add("-u");
+            applicationArgs.add("sa");
+
+            applicationArgs.add("-db");
+            applicationArgs.add(h2url);
+            String driverPath = org.h2.Driver.class.getProtectionDomain()
+                                                   .getCodeSource()
+                                                   .getLocation()
+                                                   .toURI()
+                                                   .getPath();
+            applicationArgs.add("-loadjars");
+            applicationArgs.add(driverPath);
+            applicationArgs.add("-dp");
+            applicationArgs.add(driverPath);
+            JdbcDataSource dataSource = new JdbcDataSource();
+            dataSource.setURL("jdbc:h2:" + h2url + ";DATABASE_TO_LOWER=TRUE" + ";INIT\\=CREATE SCHEMA IF NOT EXISTS " + schemaName + "\\;SET SCHEMA " + schemaName + ";");
+            dataSource.setUser("sa");
+            try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement()) {
+                statement.execute(Files.readString(ddlFilePath));
+            }
+            jarExecutor.run();
+        } catch (URISyntaxException e) {
+            log.error(String.format(logFormat, "load h2 driver error."), e);
+            throw new GradleException(e.getMessage(), e);
+        } catch (SQLException | IOException e) {
+            log.error(String.format(logFormat, "setup database error."), e);
+            throw new GradleException(e.getMessage(), e);
+        } finally {
+            if (server != null) {
+                server.stop();
+            }
+        }
+    }
+
+    private void executeForConnectDatabase(String schemaName, ERDbExtension databaseConnectExtension, List<String> applicationArgs, Runnable jarExecutor) {
+        applicationArgs.add("-t");
+        applicationArgs.add(databaseConnectExtension.getDatabaseType());
+        applicationArgs.add("-db");
+        applicationArgs.add(databaseConnectExtension.getDatabaseName());
+        applicationArgs.add("-s");
+        applicationArgs.add(schemaName);
+        applicationArgs.add("-host");
+        applicationArgs.add(databaseConnectExtension.getHostName());
+        applicationArgs.add("-port");
+        applicationArgs.add(String.valueOf(databaseConnectExtension.getPort()));
+        applicationArgs.add("-u");
+        applicationArgs.add(databaseConnectExtension.getAccessUser());
+        applicationArgs.add("-p");
+        applicationArgs.add(databaseConnectExtension.getAccessPassword());
+        applicationArgs.add("-loadjars");
+        String driverPath = getDriverJarPath(databaseConnectExtension);
+        applicationArgs.add(driverPath);
+        applicationArgs.add("-dp");
+        applicationArgs.add(driverPath);
+        jarExecutor.run();
+    }
+
+    @SuppressWarnings("unchecked")
+    private String getVersion(Optional<String> version) {
+        return version.orElseGet(() -> {
+            String schemaspyGitInfoUrl = "https://api.github.com/repos/schemaspy/schemaspy/releases/latest";
+            try {
+                URL url = new URL(schemaspyGitInfoUrl);
+                HttpURLConnection http = (HttpURLConnection) url.openConnection();
+                Map<String, List<String>> header = http.getHeaderFields();
+                while (isRedirected(header)) {
+                    URL redirectUrl = new URL(header.get("Location").get(0));
+                    http = (HttpURLConnection) redirectUrl.openConnection();
+                    header = http.getHeaderFields();
+                }
+                try (BufferedInputStream input = new BufferedInputStream(http.getInputStream());
+                        InputStreamReader reader = new InputStreamReader(input);
+                        BufferedReader output = new BufferedReader(reader)) {
+                    String text = output.lines().collect(Collectors.joining());
+                    Map<String, String> jsonData = (Map<String, String>) new JsonSlurper().parseText(text);
+                    String tagName = jsonData.get("tag_name");
+                    return tagName.startsWith("v") ? tagName.split("v")[1] : tagName;
+                }
+            } catch (IOException e) {
+                log.error(String.format(logFormat, "version check error."), e);
+                throw new GradleException(e.getMessage(), e);
+            }
+        });
+
+    }
+
+    private boolean isRedirected(Map<String, List<String>> header) {
+        for (String hv : header.get(null)) {
+            if (hv.contains(" 301 ") || hv.contains(" 302 ")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getSchemaspyJarPath(String version) {
+        log.lifecycle(String.format(logFormat, "use schemaspy version: " + version));
+        File jarFile = schemaspyExecuteDir.resolve("schemaspy-" + version + ".jar").toFile();
+        try {
+            if (!jarFile.exists()) {
+                jarFile.mkdirs();
+                jarFile.createNewFile();
+                log.lifecycle(String.format(logFormat, "schemaspy jar not found."));
+                String downloadJarUrl = "https://github.com/schemaspy/schemaspy/releases/download/v" + version + "/schemaspy-" + version + ".jar";
+                log.lifecycle(String.format(logFormat, "try download schemaspy jar from " + downloadJarUrl));
+                URL url = new URL(downloadJarUrl);
+                Files.copy(url.openStream(), jarFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                log.lifecycle(String.format(logFormat, "schemaspy jar download completed: " + jarFile.getCanonicalPath()));
+            }
+            return jarFile.getCanonicalPath();
+        } catch (FileNotFoundException e) {
+            log.error(String.format(logFormat, "schemaspy version not supported: " + version));
+            log.lifecycle(String.format(logFormat, "check -> https://github.com/schemaspy/schemaspy/releases"));
+            throw new GradleException(e.getMessage(), e);
+        } catch (IOException e) {
+            log.error(String.format(logFormat, "jar file get error."), e);
+            throw new GradleException(e.getMessage(), e);
+        }
     }
 
     private void changeTemplateFile(Path templateFolderPath, String schemaName) {
@@ -730,113 +874,70 @@ public class ERTask extends JavaExec {
             throw new GradleException(e.getMessage(), e); 
         }
     }
-    private void executeForH2ByMemory(String schemaName, Path ddlFilePath, List<String> applicationArgs, Runnable jarExecutor) {
-        org.h2.tools.Server server = null;
+
+    private String getDriverJarPath(ERDbExtension databaseConnectExtension) {
         try {
-            org.h2.tools.Server tcpServer = org.h2.tools.Server.createTcpServer("-ifNotExists", "-tcpAllowOthers", "-baseDir", schemaspyExecuteDir.toString()).start();
-            server = tcpServer;
-            String h2url = server.getService().getURL() + "/" + schemaName;
-            applicationArgs.add("-t");
-            applicationArgs.add("h2");
-            applicationArgs.add("-s");
-            applicationArgs.add(schemaName);
-
-            // set connect user
-            applicationArgs.add("-u");
-            applicationArgs.add("sa");
-
-            applicationArgs.add("-db");
-            applicationArgs.add(h2url);
-            String driverPath = org.h2.Driver.class.getProtectionDomain()
-                                                   .getCodeSource()
-                                                   .getLocation()
-                                                   .toURI()
-                                                   .getPath();
-            applicationArgs.add("-loadjars");
-            applicationArgs.add(driverPath);
-            applicationArgs.add("-dp");
-            applicationArgs.add(driverPath);
-            JdbcDataSource dataSource = new JdbcDataSource();
-            dataSource.setURL("jdbc:h2:" + h2url + ";DATABASE_TO_LOWER=TRUE" + ";INIT\\=CREATE SCHEMA IF NOT EXISTS " + schemaName + "\\;SET SCHEMA " + schemaName + ";");
-            dataSource.setUser("sa");
-            try (Connection connection = dataSource.getConnection();
-                Statement statement = connection.createStatement()) {
-                statement.execute(Files.readString(ddlFilePath));
-            }
-            jarExecutor.run();
-        } catch (URISyntaxException e) {
-            log.error(String.format(logFormat, "load h2 driver error."), e);
-            throw new GradleException(e.getMessage(), e);
-        } catch (SQLException | IOException e) {
-            log.error(String.format(logFormat, "setup database error."), e);
-            throw new GradleException(e.getMessage(), e);
-        } finally {
-            if (server != null) {
-                server.stop();
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private String getVersion(Optional<String> version) {
-        return version.orElseGet(() -> {
-            String schemaspyGitInfoUrl = "https://api.github.com/repos/schemaspy/schemaspy/releases/latest";
-            try {
-                URL url = new URL(schemaspyGitInfoUrl);
-                HttpURLConnection http = (HttpURLConnection) url.openConnection();
-                Map<String, List<String>> header = http.getHeaderFields();
-                while (isRedirected(header)) {
-                    URL redirectUrl = new URL(header.get("Location").get(0));
-                    http = (HttpURLConnection) redirectUrl.openConnection();
-                    header = http.getHeaderFields();
+            return databaseConnectExtension.getDriverFile().orElseGet(() -> {
+                String databaseType = databaseConnectExtension.getDatabaseType();
+                String databaseVersion = databaseConnectExtension.getDatabaseVersion().get();
+                String jarFileName = null;
+                String downloadJarUrl = null;
+                try {
+                    if ("mysql".equals(databaseType)) {
+                        jarFileName = "mysql-connector-java-" + databaseVersion + ".jar";
+                        downloadJarUrl = "https://repo1.maven.org/maven2/mysql/mysql-connector-java/" + databaseVersion + "/" + jarFileName;
+                    } else if ("pgsql".equals(databaseType)) {
+                        jarFileName = "postgresql-" + databaseVersion + ".jar";
+                        downloadJarUrl = "https://repo1.maven.org/maven2/org/postgresql/postgresql/" + databaseVersion + "/" + jarFileName;
+                    } else if ("mariadb".equals(databaseType)) {
+                        jarFileName = "mariadb-java-client-" + databaseVersion + ".jar";
+                        downloadJarUrl = "https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/" + databaseVersion + "/" + jarFileName;
+                    } else {
+                        log.error(String.format(logFormat, "please connecting driver file specify."));
+                        throw new GradleException("driver download not supported.");
+                    }
+                    Path jarPath = schemaspyExecuteDir.resolve(jarFileName);
+                    File jarFile = jarPath.toFile();
+                    if (!jarFile.exists()) {
+                        log.lifecycle(String.format(logFormat, "database driver jar not found."));
+                        log.lifecycle(String.format(logFormat, "try download driver jar from " + downloadJarUrl));
+                        Files.copy(new URL(downloadJarUrl).openStream(), jarPath, StandardCopyOption.REPLACE_EXISTING);
+                        log.lifecycle(String.format(logFormat, "driver jar download completed: " + jarPath));
+                    }
+                    return jarFile;
+                } catch (IOException e) {
+                    log.error(String.format(logFormat, "jar file get error."), e);
+                    throw new GradleException(e.getMessage(), e);
                 }
-                try (BufferedInputStream input = new BufferedInputStream(http.getInputStream());
-                        InputStreamReader reader = new InputStreamReader(input);
-                        BufferedReader output = new BufferedReader(reader)) {
-                    String text = output.lines().collect(Collectors.joining());
-                    Map<String, String> jsonData = (Map<String, String>) new JsonSlurper().parseText(text);
-                    String tagName = jsonData.get("tag_name");
-                    return tagName.startsWith("v") ? tagName.split("v")[1] : tagName;
-                }
-            } catch (IOException e) {
-                log.error(String.format(logFormat, "version check error."), e);
-                throw new GradleException(e.getMessage(), e);
-            }
-        });
-
-    }
-    private boolean isRedirected(Map<String, List<String>> header) {
-        for (String hv : header.get(null)) {
-            if (hv.contains(" 301 ") || hv.contains(" 302 ")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String getSchemaspyJarPath(String version) {
-        log.lifecycle(String.format(logFormat, "use schemaspy version: " + version));
-        File jarFile = schemaspyExecuteDir.resolve("schemaspy-" + version + ".jar").toFile();
-        try {
-            if (!jarFile.exists()) {
-                jarFile.mkdirs();
-                jarFile.createNewFile();
-                log.lifecycle(String.format(logFormat, "schemaspy jar not found."));
-                String downloadJarUrl = "https://github.com/schemaspy/schemaspy/releases/download/v" + version + "/schemaspy-" + version + ".jar";
-                log.lifecycle(String.format(logFormat, "try download schemaspy jar from " + downloadJarUrl));
-                URL url = new URL(downloadJarUrl);
-                Files.copy(url.openStream(), jarFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                log.lifecycle(String.format(logFormat, "schemaspy jar download completed: " + jarFile.getCanonicalPath()));
-            }
-            return jarFile.getCanonicalPath();
-        } catch (FileNotFoundException e) {
-            log.error(String.format(logFormat, "schemaspy version not supported: " + version));
-            log.lifecycle(String.format(logFormat, "check -> https://github.com/schemaspy/schemaspy/releases"));
-            throw new GradleException(e.getMessage(), e);
+            }).getCanonicalPath();
         } catch (IOException e) {
-            log.error(String.format(logFormat, "jar file get error."), e);
+            log.error(String.format(logFormat, "driver jar setup error."), e);
             throw new GradleException(e.getMessage(), e);
         }
+    }
+
+    private String getExtensionRequiredSetting() {
+        return String.join(System.lineSeparator(),
+            "er task extension required connect setting.",
+            "******************************************************",
+            "yamlER {",
+            "    er {",
+            "      outDir = file('output directory')",
+            "      schema = 'schema name'",
+            "      db {",
+            "        version = 'database (driver) version'",
+            "        type = 'connect database type'",
+            "        host = 'database host name'",
+            "        port = 0000",
+            "        database = 'database name'",
+            "        user = 'accessible account user name'",
+            "        password = 'accessible account user password'",
+            "      }",
+            "    }",
+            "}",
+            "******************************************************",
+            "connect database type reference: https://github.com/schemaspy/schemaspy/tree/master/src/main/resources/org/schemaspy/types"
+        );
     }
 
 

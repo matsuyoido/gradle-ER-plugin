@@ -18,6 +18,7 @@ import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.UnexpectedBuildFailure;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -265,6 +266,90 @@ public class MainPluginTest {
         );
 
         assertThrows(UnexpectedBuildFailure.class, () -> run("5.0", "er"));
+    }
+
+    @Disabled("実際のDB環境が必要なため")
+    @Test
+    public void erTaskExecute_connectMysql() throws Exception {
+        setup(
+            "yamlER {",
+            "    lineEnding = 'linux'",
+            "    er {",
+            "      schema = 'plugin-test'",
+            "      outDir = file('./er')",
+            "      db {",
+            "        type = 'mysql'",
+            "        version = '8.0.23'",
+            "        host = '172.17.70.134'",
+            "        port = 3307",
+            "        database = 'plugin-test'",
+            "        user = 'testuser'",
+            "        password = 'password'",
+            "      }",
+            "    }",
+            "}"
+        );
+
+        run("5.0", "er").getOutput();
+
+        File resultFile = projectDir.resolve("er/index.html").toFile();
+        assertTrue(resultFile.exists(), "ER html file exist?");
+    }
+
+    @Disabled("実際のDB環境が必要なため")
+    @Test
+    public void erTaskExecute_connectPostgresql() throws Exception {
+        setup(
+            "yamlER {",
+            "    lineEnding = 'linux'",
+            "    er {",
+            "      schema = 'plugin-test'",
+            "      outDir = file('./er')",
+            "      db {",
+            "        type = 'postgresql'",
+            "        version = '42.2.19'",
+            "        host = '172.17.70.134'",
+            "        port = 5432",
+            "        database = 'plugin-test'",
+            "        user = 'testuser'",
+            "        password = 'password'",
+            "      }",
+            "    }",
+            "}"
+        );
+
+        run("5.0", "er").getOutput();
+
+        File resultFile = projectDir.resolve("er/index.html").toFile();
+        assertTrue(resultFile.exists(), "ER html file exist?");
+    }
+
+    @Disabled("実際のDB環境が必要なため")
+    @Test
+    public void erTaskExecute_connectMariadb() throws Exception {
+        setup(
+            "yamlER {",
+            "    lineEnding = 'linux'",
+            "    er {",
+            "      schema = 'plugin-test'",
+            "      outDir = file('./er')",
+            "      db {",
+            "        type = 'mariadb'",
+            "        version = '2.7.2'",
+            "        host = '172.17.70.134'",
+            "        port = 3305",
+            "        database = 'plugin-test'",
+            "        user = 'testuser'",
+            "        password = 'password'",
+            "      }",
+            "    }",
+            "}"
+        );
+
+        run("5.0", "er").getOutput();
+
+        File resultFile = projectDir.resolve("er/index.html").toFile();
+        assertTrue(resultFile.exists(), "ER html file exist?");
     }
 
     private void setup(String... extensionText) throws IOException {

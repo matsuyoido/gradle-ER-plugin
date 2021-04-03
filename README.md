@@ -76,10 +76,33 @@ yamlER {
         ...
     }
     er {
+        // can specify schemaspy version.
         version = ''
+        // specify database schema name.
         schema = ''
+        // If you don't want to prepare database, specify ddl file.
         ddl = file('.sql')
+        // specify er diagram output directory.
         outDir = file('')
+        // If you want to connect exist database, setup under setting.
+        db {
+            // If you don't want to prepare database driver, specify driver version. But, only supprted for MySQL, MariaDB, PostgreSQL.
+            version = ''
+            // If you want to connect other than MySQL or MariaDB or PostgreSQL, specify database driver jar file.
+            driver = file()
+            // mysql, postgresql, mariadb, db2, and so on... ※ ref: https://github.com/schemaspy/schemaspy/tree/master/src/main/resources/org/schemaspy/types
+            type = ''
+            // Hostname/ip to connect to.
+            host = ''
+            // Port that database listens to.
+            port = 0
+            // Name of database to connect to.
+            database = ''
+            // Valid database user id with read access. 
+            user = ''
+            // Password associated with that user.
+            password = ''
+        }
     }
     er {
         ...
