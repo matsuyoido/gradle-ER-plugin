@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -28,6 +29,7 @@ import com.matsuyoido.plugin.er.RootExtension;
 import org.gradle.api.GradleException;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.JavaExec;
+import org.gradle.process.internal.ExecException;
 import org.h2.jdbcx.JdbcDataSource;
 
 import groovy.json.JsonSlurper;
@@ -135,7 +137,9 @@ public class ERTask extends JavaExec {
     }
 
     private void executeForH2ByMemory(String schemaName, Path ddlFilePath, List<String> applicationArgs, Runnable jarExecutor) {
+        String jarFileName = "h2-1.4.200.jar";
         org.h2.tools.Server server = null;
+        String driverPath = null;
         try {
             org.h2.tools.Server tcpServer = org.h2.tools.Server.createTcpServer("-ifNotExists", "-tcpAllowOthers", "-baseDir", schemaspyExecuteDir.toString()).start();
             server = tcpServer;
@@ -151,11 +155,15 @@ public class ERTask extends JavaExec {
 
             applicationArgs.add("-db");
             applicationArgs.add(h2url);
-            String driverPath = org.h2.Driver.class.getProtectionDomain()
-                                                   .getCodeSource()
-                                                   .getLocation()
-                                                   .toURI()
-                                                   .getPath();
+            if (getDriverPath(jarFileName).toFile().exists()) {
+                driverPath = schemaspyExecuteDir.resolve(jarFileName).toFile().getCanonicalPath();
+            } else {
+                driverPath = org.h2.Driver.class.getProtectionDomain()
+                                                .getCodeSource()
+                                                .getLocation()
+                                                .toURI()
+                                                .getPath();
+            }
             applicationArgs.add("-loadjars");
             applicationArgs.add(driverPath);
             applicationArgs.add("-dp");
@@ -174,6 +182,24 @@ public class ERTask extends JavaExec {
         } catch (SQLException | IOException e) {
             log.error(String.format(logFormat, "setup database error."), e);
             throw new GradleException(e.getMessage(), e);
+        } catch (ExecException e) {
+            log.warn(String.format(logFormat, String.join(System.lineSeparator(),
+            "If gradle version equal to or greater than 6.6, caused error by Gradle.",
+            "  -> https://github.com/gradle/gradle/issues/14727"
+            )));
+            log.lifecycle(String.format(logFormat, "retry generate er diagram."));
+            log.debug(String.format(logFormat, "Error stacktrace."), e);
+
+            try {
+                File h2DriverFile = downloadJarFile(jarFileName, "https://repo1.maven.org/maven2/com/h2database/h2/1.4.200/" + jarFileName);
+                String h2DriverFilePath = h2DriverFile.getCanonicalPath();
+                String alreadySetDriverPath = driverPath;
+                applicationArgs.replaceAll(arg -> arg.equals(alreadySetDriverPath) ? h2DriverFilePath : arg);
+                jarExecutor.run();
+            } catch (IOException ex) {
+                log.error(String.format(logFormat, "H2 driver download failed."));
+                throw new GradleException(ex.getMessage(), ex);
+            }
         } finally {
             if (server != null) {
                 server.stop();
@@ -901,15 +927,7 @@ public class ERTask extends JavaExec {
                         log.error(String.format(logFormat, "please connecting driver file specify."));
                         throw new GradleException("driver download not supported.");
                     }
-                    Path jarPath = schemaspyExecuteDir.resolve(jarFileName);
-                    File jarFile = jarPath.toFile();
-                    if (!jarFile.exists()) {
-                        log.lifecycle(String.format(logFormat, "database driver jar not found."));
-                        log.lifecycle(String.format(logFormat, "try download driver jar from " + downloadJarUrl));
-                        Files.copy(new URL(downloadJarUrl).openStream(), jarPath, StandardCopyOption.REPLACE_EXISTING);
-                        log.lifecycle(String.format(logFormat, "driver jar download completed: " + jarPath));
-                    }
-                    return jarFile;
+                    return downloadJarFile(jarFileName, downloadJarUrl);
                 } catch (IOException e) {
                     log.error(String.format(logFormat, "jar file get error."), e);
                     throw new GradleException(e.getMessage(), e);
@@ -919,6 +937,22 @@ public class ERTask extends JavaExec {
             log.error(String.format(logFormat, "driver jar setup error."), e);
             throw new GradleException(e.getMessage(), e);
         }
+    }
+
+    private File downloadJarFile(String jarFileName, String downloadJarUrl) throws MalformedURLException, IOException {
+        Path jarPath = getDriverPath(jarFileName);
+        File jarFile = jarPath.toFile();
+        if (!jarFile.exists()) {
+            log.lifecycle(String.format(logFormat, "database driver jar not found."));
+            log.lifecycle(String.format(logFormat, "try download driver jar from " + downloadJarUrl));
+            Files.copy(new URL(downloadJarUrl).openStream(), jarPath, StandardCopyOption.REPLACE_EXISTING);
+            log.lifecycle(String.format(logFormat, "driver jar download completed: " + jarPath));
+        }
+        return jarFile;
+    }
+
+    private Path getDriverPath(String fileName) {
+        return schemaspyExecuteDir.resolve(fileName);
     }
 
     private String getExtensionRequiredSetting() {

@@ -209,8 +209,9 @@ public class MainPluginTest {
             testCase + " DDL content equals.");
     }
 
-    @Test
-    public void erTaskExecute_minimum() throws Exception {
+    @ParameterizedTest
+    @CsvSource({"5.0", "6.5.1", "6.6"})
+    public void erTaskExecute_minimum(String gradleVersion) throws Exception {
         String ddlFileName = classpathResourcePath("testcase/31_result.sql");
 
         setup(
@@ -223,7 +224,7 @@ public class MainPluginTest {
             "}"
         );
 
-        run("5.0", "er").getOutput();
+        run(gradleVersion, "er").getOutput();
 
         File resultFile = projectDir.resolve("er/index.html").toFile();
         assertTrue(resultFile.exists(), "ER html file exist?");
