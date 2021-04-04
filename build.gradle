@@ -1,0 +1,110 @@
+
+buildscript {
+  ext {
+    jdkVersion = '11'
+    pluginVersion = '1.0.3'
+    jarName = 'matsuyoido-er-gradle-plugin'
+    gradleVersion = '6.7'
+    junitTestVersion = '5.4.2'
+    defaultEncoding = 'UTF-8'
+  }
+  repositories {
+    mavenCentral()
+    maven {
+      url 'https://plugins.gradle.org/m2/'
+    }
+  }
+  dependencies {
+    classpath "com.gradle.publish:plugin-publish-plugin:0.11.0"
+  }
+}
+
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'eclipse'
+}
+
+[compileJava, compileTestJava]*.options*.encoding = "${defaultEncoding}"
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+    test.compileClasspath += configurations.compileOnly
+    test.runtimeClasspath += configurations.compileOnly
+}
+javadoc {
+    options.charSet = "${defaultEncoding}"
+    options.encoding = "${defaultEncoding}"
+    failOnError = false // javadoc create error, but publish not require. Because, failed ignore.
+}
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of("${jdkVersion}")
+    }
+}
+test {
+    useJUnitPlatform()
+}
+tasks.named("testClasses") {
+    dependsOn("pluginUnderTestMetadata")
+}
+
+
+repositories {
+    jcenter()
+}
+dependencies {
+  implementation gradleApi()
+
+  testImplementation platform("org.junit:junit-bom:${junitTestVersion}")
+  testImplementation 'org.junit.jupiter:junit-jupiter'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+  // https://mvnrepository.com/artifact/org.yaml/snakeyaml
+  implementation group: 'org.yaml', name: 'snakeyaml', version: '1.28'
+  // あえてjarの中に組み込む
+  implementation group: 'com.h2database', name: 'h2', version: '1.4.200'
+}
+
+
+wrapper {
+    gradleVersion = "${gradleVersion}"
+}
+
+
+version = "$pluginVersion"
+group = 'com.matsuyoido'
+jar.baseName = "$jarName"
+apply plugin: 'java-gradle-plugin'
+gradlePlugin {
+    plugins {
+        erPlugin {
+            id = 'com.matsuyoido.er'
+            implementationClass = 'com.matsuyoido.plugin.er.MainPlugin'
+        }
+    }
+}
+
+apply plugin: 'com.gradle.plugin-publish'
+pluginBundle {
+    website = 'https://github.com/matsuyoido/gradle-ER-plugin' // temporary url
+    plugins {
+        erPlugin {
+            displayName = 'This plugin support of database design.'
+            description = 'yaml -> DDL | DDL -> Entity Relationship Diagram'
+            vcsUrl = 'https://github.com/matsuyoido/gradle-ER-plugin'
+            tags = ['db', 'ddl', 'er', 'yaml']
+            version = "$pluginVersion"
+        }
+    }
+    mavenCoordinates {
+        groupId = "com.matsuyoido"
+        artifactId = "er-plugin"
+    }
+}

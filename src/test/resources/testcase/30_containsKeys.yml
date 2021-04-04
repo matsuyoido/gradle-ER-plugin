@@ -1,0 +1,63 @@
+
+tables: 
+  user: 
+    columns: 
+      id: 
+        type: INT
+        options: NOT NULL
+      public_id:
+        type: VARCHAR(8)
+        options: NOT NULL
+      name: 
+        type: VARCHAR(50)
+        options: NOT NULL
+      blood_type: 
+        type: CHAR(1)
+        options: NOT NULL
+      birthdate: 
+        type: DATE
+        options: NOT NULL
+      nick_name: 
+        type: VARCHAR(50)
+    pk:
+      - id
+    uq: 
+      uq_user_01: public_id
+      uq_user_02: 
+        - name
+        - nick_name
+    idx:
+      idx_user_01: name
+      idx_USER_02:
+        - birthdate
+  shop: 
+    columns: 
+      id: 
+        type: INT
+        options: NOT NULL
+      user_id: 
+        type: INT
+        options: NOT NULL
+    pk: id
+    fk: 
+      fk_shop_01: 
+        relate: user_id
+        to: 
+          user: id
+  customer: 
+    columns: 
+      id: 
+        type: INT
+        options: NOT NULL
+      user_id: 
+        type: INT
+        options: NOT NULL
+    pk: 
+      - id
+    fk: 
+      fk_customer_01: 
+        relate: 
+          - user_id
+        to: 
+          user: 
+            - id

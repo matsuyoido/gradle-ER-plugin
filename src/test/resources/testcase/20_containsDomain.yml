@@ -1,0 +1,30 @@
+domains: 
+  # 1から2147483647
+  自動連番ID: SERIAL
+  種別: CHAR(1)
+
+tables: 
+  user: 
+    columns: 
+      id: 
+        type: 自動連番ID
+        options: NOT NULL
+      public_id:
+        type: VARCHAR(8)
+        options: NOT NULL
+      name: 
+        type: VARCHAR(50)
+        options: NOT NULL
+      blood_type: 
+        type: 種別
+        options: NOT NULL
+      birthdate: 
+        type: DATE
+        options: NOT NULL
+      nick_name: 
+        type: VARCHAR(50)
+  test:
+    columns: 
+      id: 
+        type: 自動連番ID
+        options: NOT NULL

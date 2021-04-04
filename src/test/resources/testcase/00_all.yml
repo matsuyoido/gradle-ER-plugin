@@ -1,0 +1,94 @@
+version: 1.0.0
+
+domains: 
+  # 1から2147483647
+  自動連番ID: SERIAL
+  自動連番参照ID: INT
+  種別: CHAR(1)
+  日時: TIMESTAMP WITHOUT TIME ZONE
+
+commonColumns: 
+  registered_at: 
+    logicalName: 登録日時
+    type: 日時
+    options: NOT NULL
+  updated_at: 
+    logicalName: 編集日時
+    type: 日時
+
+tables: 
+  user: 
+    columns: 
+      id: 
+        logicalName: ID
+        type: 自動連番ID
+        options: NOT NULL
+      public_id:
+        logicalName: 公開ID
+        type: VARCHAR(8)
+        options: NOT NULL
+      name: 
+        logicalName: 名前
+        type: VARCHAR(50)
+        options: NOT NULL
+      blood_type: 
+        logicalName: 血液型
+        type: 種別
+        options: NOT NULL
+      birthdate: 
+        logicalName: 誕生日
+        type: DATE
+        options: NOT NULL
+      nick_name: 
+        logicalName: ニックネーム
+        type: VARCHAR(50)
+    pk:
+      - id
+    uq: 
+      uq_user_01: public_id
+      uq_user_02: 
+        - name
+        - nick_name
+    idx:
+      idx_user_01: name
+      idx_USER_02:
+        - birthdate
+  shop: 
+    logicalName: 販売者
+    info: 販売者としての登録情報
+    columns: 
+      id: 
+        info: サロゲートキー
+        logicalName: ID
+        type: 自動連番ID
+        options: NOT NULL
+      user_id: 
+        logicalName: ショップユーザーID
+        type: 自動連番参照ID
+        options: NOT NULL
+    pk: id
+    fk: 
+      fk_shop_01: 
+        relate: user_id
+        to: 
+          user: id
+  customer: 
+    logicalName: 購入者
+    columns: 
+      id: 
+        info: サロゲートキー
+        type: 自動連番ID
+        options: NOT NULL
+      user_id: 
+        logicalName: 購入者ユーザーID
+        type: 自動連番参照ID
+        options: NOT NULL
+    pk: 
+      - id
+    fk: 
+      fk_customer_01: 
+        relate: 
+          - user_id
+        to: 
+          user: 
+            - id

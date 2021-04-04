@@ -1,0 +1,32 @@
+tables:
+  temp:
+    columns: 
+      id: 
+        type: INT AUTO_INCREMENT
+        options: NOT NULL
+      user_id: 
+        type: INT
+        options: NOT NULL
+    fk: 
+      fk_temp_01: 
+        relate: user_id
+        to: 
+          test: id
+  test:
+    columns: 
+      id: 
+        type: INT AUTO_INCREMENT
+        options: NOT NULL
+      user_id: 
+        type: INT
+        options: NOT NULL
+    fk: 
+      fk_test_01: 
+        relate: user_id
+        to: 
+          user: id
+  user: 
+    columns: 
+      id: 
+        type: INT
+        options: NOT NULL
