@@ -144,9 +144,6 @@ public class DatabaseTable {
         LinkedList<String> sentence = new LinkedList<>();
 
         this.columns.forEach(column -> sentence.add("  " + column.createSentence(lowerAll)));
-        if (!primaryKeyCloumns.isEmpty()) {
-            sentence.add(toSentence("  PRIMARY KEY (", lowerAll) + this.primaryKeyCloumns.stream().map(column -> column.name).collect(Collectors.joining(", ")) + ")" );   
-        }
         if (this.comment != null && !this.comment.isBlank()) {
             sentence.add(toSentence("  COMMENT ", lowerAll) + '"' + this.comment + '"');
         }
@@ -163,6 +160,15 @@ public class DatabaseTable {
         sentence.addLast(");");
 
         sentence.addFirst("-- " + this.name + Optional.ofNullable(this.logicalName).map(v -> " : " + v).orElse(""));
+
+        if (!primaryKeyCloumns.isEmpty()) {
+            sentence.add(toSentence("ALTER TABLE ", lowerAll) 
+                + schema.map(v -> v + ".").orElse("") + this.name
+                + toSentence(" ADD CONSTRAINT ", lowerAll) + String.format("%s_PK", this.name)
+                + toSentence(" PRIMARY KEY (", lowerAll)
+                + this.primaryKeyCloumns.stream().map(column -> column.name).collect(Collectors.joining(", "))
+                + ");" );
+        }
         return sentence;
     }
 

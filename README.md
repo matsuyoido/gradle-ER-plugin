@@ -13,7 +13,7 @@ java equal to or greater than 11.
 
 https://plugins.gradle.org/plugin/com.matsuyoido.er
 
-Latest: `1.0.3` or `1.0`
+Latest: `1.1.0`
 
 ## yaml形式
 

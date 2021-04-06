@@ -7,26 +7,26 @@ CREATE TABLE test1.user(
   birthdate DATE NOT NULL,
   nick_name VARCHAR(50),
   registered_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  updated_at TIMESTAMP WITHOUT TIME ZONE,
-  PRIMARY KEY (id)
+  updated_at TIMESTAMP WITHOUT TIME ZONE
 );
+ALTER TABLE test1.user ADD CONSTRAINT user_PK PRIMARY KEY (id);
 -- shop : 販売者
 CREATE TABLE test1.shop(
   id SERIAL NOT NULL COMMENT "ID:サロゲートキー",
   user_id INT NOT NULL,
   registered_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
   updated_at TIMESTAMP WITHOUT TIME ZONE,
-  PRIMARY KEY (id),
   COMMENT "販売者としての登録情報"
 );
+ALTER TABLE test1.shop ADD CONSTRAINT shop_PK PRIMARY KEY (id);
 -- customer : 購入者
 CREATE TABLE test1.customer(
   id SERIAL NOT NULL COMMENT "サロゲートキー",
   user_id INT NOT NULL,
   registered_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-  updated_at TIMESTAMP WITHOUT TIME ZONE,
-  PRIMARY KEY (id)
+  updated_at TIMESTAMP WITHOUT TIME ZONE
 );
+ALTER TABLE test1.customer ADD CONSTRAINT customer_PK PRIMARY KEY (id);
 
 ALTER TABLE test1.user ADD CONSTRAINT uq_user_01 UNIQUE (public_id);
 ALTER TABLE test1.user ADD CONSTRAINT uq_user_02 UNIQUE (name, nick_name);
