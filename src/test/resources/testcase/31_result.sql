@@ -5,21 +5,21 @@ CREATE TABLE user(
   name VARCHAR(50) NOT NULL,
   blood_type CHAR(1) NOT NULL,
   birthdate DATE NOT NULL,
-  nick_name VARCHAR(50),
-  PRIMARY KEY (id)
+  nick_name VARCHAR(50)
 );
+ALTER TABLE user ADD CONSTRAINT user_PK PRIMARY KEY (id);
 -- shop
 CREATE TABLE shop(
   id INT NOT NULL,
-  user_id INT NOT NULL,
-  PRIMARY KEY (id)
+  user_id INT NOT NULL
 );
+ALTER TABLE shop ADD CONSTRAINT shop_PK PRIMARY KEY (id);
 -- customer
 CREATE TABLE customer(
   id INT NOT NULL,
-  user_id INT NOT NULL,
-  PRIMARY KEY (id)
+  user_id INT NOT NULL
 );
+ALTER TABLE customer ADD CONSTRAINT customer_PK PRIMARY KEY (id);
 
 ALTER TABLE user ADD CONSTRAINT uq_user_01 UNIQUE (public_id);
 ALTER TABLE user ADD CONSTRAINT uq_user_02 UNIQUE (name, nick_name);
